@@ -1,6 +1,6 @@
 # Swig CLI
 
-This is a command-line interface for interacting with a Swig wallet.
+This is a command-line interface for interacting with a Swig wallet. It's intention is to be rudimentary and demonstrate how to do things over to be a usable client for anything.
 
 ## Setup
 
