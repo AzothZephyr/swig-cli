@@ -55,9 +55,9 @@ bun transfer-spl <RECIPIENT_ADDRESS> <MINT_ADDRESS> <AMOUNT> <SWIG_ACCOUNT_ADDRE
 - `<AMOUNT>`: The amount of tokens to transfer (in the smallest unit of the token).
 - `<SWIG_ACCOUNT_ADDRESS>`: The specific Swig account to use.
 
-### Swap
+### Swap (Jupiter Metis)
 
-To swap tokens using Jupiter, use the `swap` command:
+To swap tokens using Jupiter Metis, use the `swap` command:
 
 ```bash
 bun swap <AMOUNT> <SWIG_ACCOUNT_ADDRESS> [FROM_TOKEN] [TO_TOKEN]
@@ -67,6 +67,39 @@ bun swap <AMOUNT> <SWIG_ACCOUNT_ADDRESS> [FROM_TOKEN] [TO_TOKEN]
 - `<SWIG_ACCOUNT_ADDRESS>`: The specific Swig account to use.
 - `[FROM_TOKEN]`: The token to swap from (defaults to `sol`).
 - `[TO_TOKEN]`: The token to swap to (defaults to `usdc`).
+
+### Swap (Titan)
+
+To swap tokens using Titan Exchange, use the `titan` command:
+
+```bash
+npx tsx program.ts titan <AMOUNT> <SWIG_ACCOUNT_ADDRESS> [FROM_TOKEN] [TO_TOKEN]
+```
+
+**Note:** The titan command must be run with `npx tsx` instead of `bun` due to websocket compatibility issues between the Titan SDK and Bun's runtime.
+
+- `<AMOUNT>`: The amount of tokens to swap.
+- `<SWIG_ACCOUNT_ADDRESS>`: The specific Swig account to use.
+- `[FROM_TOKEN]`: The token to swap from (defaults to `sol`).
+- `[TO_TOKEN]`: The token to swap to (defaults to `usdc`).
+
+### Breeze (Lending)
+
+To interact with Breeze lending aggregator:
+
+```bash
+# View balances
+bun run program.ts breeze balances <SWIG_ACCOUNT_ADDRESS>
+
+# View yield positions
+bun run program.ts breeze yield <SWIG_ACCOUNT_ADDRESS>
+
+# Deposit into a fund
+bun run program.ts breeze deposit <AMOUNT> <SWIG_ACCOUNT_ADDRESS> [FUND_ID]
+
+# Withdraw from a fund
+bun run program.ts breeze withdraw <AMOUNT> <SWIG_ACCOUNT_ADDRESS> [FUND_ID]
+```
 
 ### Close
 

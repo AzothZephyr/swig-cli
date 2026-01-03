@@ -9,6 +9,7 @@ import { transferSpl } from './commands/transfer-spl';
 import { swap } from './commands/swap';
 import { ultra } from './commands/ultra';
 import { breezeDeposit, breezeWithdraw, breezeBalances, breezeYield } from './commands/breeze';
+import { titanSwap } from './commands/titan';
 import { givePermissionSwap } from './permissions/swap';
 
 const program = new Command();
@@ -80,6 +81,15 @@ program
   .argument('[from]', 'The token to swap from', 'sol')
   .argument('[to]', 'The token to swap to', 'usdc')
   .action(ultra);
+
+program
+  .command('titan')
+  .description('Swap tokens using titan exchange')
+  .argument('<amount>', 'The amount of tokens to swap')
+  .argument('<swig_account_address>', 'The swig account to use')
+  .argument('[from]', 'The token to swap from', 'sol')
+  .argument('[to]', 'The token to swap to', 'usdc')
+  .action(titanSwap);
 
 const breeze = program
   .command('breeze')
