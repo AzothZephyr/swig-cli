@@ -7,6 +7,8 @@ import { listSubAccounts } from './commands/list-subaccounts';
 import { transfer } from './commands/transfer';
 import { transferSpl } from './commands/transfer-spl';
 import { swap } from './commands/swap';
+import { ultra } from './commands/ultra';
+import { breezeDeposit, breezeWithdraw, breezeBalances, breezeYield } from './commands/breeze';
 import { givePermissionSwap } from './permissions/swap';
 
 const program = new Command();
@@ -63,12 +65,53 @@ program
 
 program
   .command('swap')
-  .description('Swap tokens using jupiter')
+  .description('Swap tokens using jupiter metis')
   .argument('<amount>', 'The amount of tokens to swap')
   .argument('<swig_account_address>', 'The swig account to use')
   .argument('[from]', 'The token to swap from', 'sol')
   .argument('[to]', 'The token to swap to', 'usdc')
   .action(swap);
+
+program
+  .command('ultra')
+  .description('Swap tokens using jupiter ultra')
+  .argument('<amount>', 'The amount of tokens to swap')
+  .argument('<swig_account_address>', 'The swig account to use')
+  .argument('[from]', 'The token to swap from', 'sol')
+  .argument('[to]', 'The token to swap to', 'usdc')
+  .action(ultra);
+
+const breeze = program
+  .command('breeze')
+  .description('Breeze lending aggregator commands');
+
+breeze
+  .command('deposit')
+  .description('Deposit into a Breeze fund')
+  .argument('<amount>', 'The amount to deposit')
+  .argument('<swig_account_address>', 'The swig account to use')
+  .argument('[fund_id]', 'The fund ID to deposit into (optional)')
+  .action(breezeDeposit);
+
+breeze
+  .command('withdraw')
+  .description('Withdraw from a Breeze fund')
+  .argument('<amount>', 'The amount to withdraw')
+  .argument('<swig_account_address>', 'The swig account to use')
+  .argument('[fund_id]', 'The fund ID to withdraw from (optional)')
+  .action(breezeWithdraw);
+
+breeze
+  .command('balances')
+  .description('View Breeze balances for a Swig account')
+  .argument('<swig_account_address>', 'The swig account to check')
+  .action(breezeBalances);
+
+breeze
+  .command('yield')
+  .description('View yield positions for a Swig account')
+  .argument('<swig_account_address>', 'The swig account to check')
+  .action(breezeYield);
 
 const givePermission = program
   .command('give-permission')
