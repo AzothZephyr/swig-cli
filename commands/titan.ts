@@ -26,12 +26,41 @@ import {
   Swig,
 } from '@swig-wallet/classic';
 
-import { V1Client, types } from '@titanexchange/sdk-ts';
+import { V1Client } from '@titanexchange/sdk-ts';
 import bs58 from 'bs58';
 import chalk from 'chalk';
 import { getConnection, getUser } from '../utils/common';
 
 const TITAN_WS_URL = process.env.TITAN_WS_URL || 'wss://us1.api.demo.titan.exchange/api/v1/ws';
+
+// inline type definitions for titan SDK (avoiding namespace export issues)
+interface TitanAccountMeta {
+  p: Uint8Array;
+  s: boolean;
+  w: boolean;
+}
+
+interface TitanInstruction {
+  p: Uint8Array;
+  a: TitanAccountMeta[];
+  d: Uint8Array;
+}
+
+interface TitanSwapRoute {
+  inAmount: number;
+  outAmount: number;
+  slippageBps: number;
+  instructions: TitanInstruction[];
+  addressLookupTables: Uint8Array[];
+  computeUnits?: number;
+  computeUnitsSafe?: number;
+  transaction?: Uint8Array;
+}
+
+enum SwapMode {
+  ExactIn = "ExactIn",
+  ExactOut = "ExactOut",
+}
 
 function formatNumber(n: number) {
   return n.toLocaleString('en-US', { maximumFractionDigits: 6 });
@@ -45,10 +74,10 @@ function getTitanToken(): string {
   return token;
 }
 
-function toTransactionInstruction(ix: types.common.Instruction): TransactionInstruction {
+function toTransactionInstruction(ix: TitanInstruction): TransactionInstruction {
   return new TransactionInstruction({
     programId: new PublicKey(ix.p),
-    keys: ix.a.map((acc) => ({
+    keys: ix.a.map((acc: TitanAccountMeta) => ({
       pubkey: new PublicKey(acc.p),
       isSigner: acc.s,
       isWritable: acc.w,
@@ -139,12 +168,12 @@ export async function titanSwap(
     const info = await client.getInfo();
     console.log(chalk.gray(`   Protocol version: ${info.protocolVersion.major}.${info.protocolVersion.minor}.${info.protocolVersion.patch}`));
 
-    const swapParams: types.v1.SwapQuoteRequest = {
+    const swapParams = {
       swap: {
         inputMint: bs58.decode(inputMint),
         outputMint: bs58.decode(outputMint),
         amount: rawAmount,
-        swapMode: types.common.SwapMode.ExactIn,
+        swapMode: SwapMode.ExactIn,
         slippageBps: 50,
       },
       transaction: {
@@ -159,7 +188,7 @@ export async function titanSwap(
     console.log(chalk.blue('📊 Requesting swap quotes...'));
     const { stream } = await client.newSwapQuoteStream(swapParams);
 
-    let bestQuote: types.v1.SwapRoute | null = null;
+    let bestQuote: TitanSwapRoute | null = null;
     let bestProvider: string | null = null;
     let quoteCount = 0;
 
@@ -211,16 +240,15 @@ export async function titanSwap(
     const signIxs = await getSignInstructions(swig, rootRole.id, swapInstructions);
 
     // Handle lookup tables
-    let lookupTables: any[] = [];
-    if (bestQuote.addressLookupTables && bestQuote.addressLookupTables.length > 0) {
-      lookupTables = await Promise.all(
-        bestQuote.addressLookupTables.map(async (lutBytes) => {
-          const lutAddress = new PublicKey(lutBytes);
-          const res = await connection.getAddressLookupTable(lutAddress);
-          return res.value!;
-        }),
-      );
-    }
+    const lookupTables = bestQuote.addressLookupTables && bestQuote.addressLookupTables.length > 0
+      ? (await Promise.all(
+          bestQuote.addressLookupTables.map(async (lutBytes: Uint8Array) => {
+            const lutAddress = new PublicKey(lutBytes);
+            const res = await connection.getAddressLookupTable(lutAddress);
+            return res.value;
+          }),
+        )).filter((lut): lut is NonNullable<typeof lut> => lut !== null)
+      : undefined;
 
     const { blockhash, lastValidBlockHeight } =
       await connection.getLatestBlockhash();
@@ -235,7 +263,7 @@ export async function titanSwap(
       payerKey: rootUser.publicKey,
       recentBlockhash: blockhash,
       instructions: [...computeIxs, ...signIxs],
-    }).compileToV0Message(lookupTables.length > 0 ? lookupTables : undefined);
+    }).compileToV0Message(lookupTables && lookupTables.length > 0 ? lookupTables : undefined);
 
     const tx = new VersionedTransaction(messageV0);
     tx.sign([rootUser]);
